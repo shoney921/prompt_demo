@@ -73,18 +73,24 @@ class DBAgent(BaseSubAgent):
         ]
     
     def run(self, query: str) -> str:
-        """
-        자연어 쿼리를 실행하고 결과를 반환합니다.
-        """
+        """자연어 쿼리를 실행하고 결과를 반환합니다."""
         try:
-            # SQL 쿼리에서 마크다운 포맷팅 제거
+            # 여러 SQL 문을 세미콜론으로 분리하여 개별 실행
             if isinstance(query, str):
+                # 마크다운 포맷팅 제거
                 query = query.replace('```sql', '').replace('```', '').strip()
-            
-            # AgentExecutor를 통해 쿼리 실행
-            result = self.agent_executor.invoke({"input": query})
-            return result["output"]
-            
+                
+                # 여러 SQL 문을 분리
+                queries = [q.strip() for q in query.split(';') if q.strip()]
+                
+                results = []
+                for single_query in queries:
+                    if single_query:
+                        result = self.agent_executor.invoke({"input": single_query})
+                        results.append(result["output"])
+                
+                return "\n".join(results)
+                
         except Exception as e:
             return f"에러 발생: {str(e)}"
 
